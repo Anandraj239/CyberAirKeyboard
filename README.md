@@ -38,6 +38,6 @@ It is highly recommended to run this project in a **Python 3.11** or **3.12** en
    *For ease of access on Windows, a `Run Air Keyboard.bat` script is included.*
 
 ## Usage Instructions
-Simply stand back, face your webcam, and hover over keys using the tip of your **Index finger**. To register a keystroke, clearly pinch your **Thumb and Index finger** together. The buffer responds to standard alphabet inputs alongside Space, Return, Backspace, and Clear keys. 
+Simply stand back, face your webcam, and hover over keys using the tip of your **Index finger**. To register a keystroke, clearly pinch your **Thumb and Index finger** together. The buffer responds to standard alphabet inputs alongside Space, Return, Backspace, and Clear keys.   
 
 Press `ESC` to shut down the interface.
