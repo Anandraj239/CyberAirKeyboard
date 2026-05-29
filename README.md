@@ -27,7 +27,7 @@ It is highly recommended to run this project in a **Python 3.11** or **3.12** en
    ```
 
 3. **Install Dependencies:**
-   ```bash
+   ```bash 
    pip install -r requirements.txt
    ```
 
