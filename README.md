@@ -2,7 +2,7 @@
 
 Cyber Air Keyboard is a next-generation, computer-vision-based virtual keyboard that enables you to type effortlessly in mid-air using your webcam. Built with a focus on speed, accuracy, and highly responsive user feedback, this project eliminates the need for physical hardware altogether.
  
-Developed by [Anandraj239](https://github.com/Anandraj239).
+Developed by [Anandraj239](https://github.com/Anandraj239). 
  
 ## Key Features
 * **Advanced Dual-Hand Tracking**: Leveraging Google's MediaPipe, the system tracks multiple hands simultaneously for rapid typing.
