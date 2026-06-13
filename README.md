@@ -3,6 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python)](https://www.python.org/)
 [![OpenCV](https://img.shields.io/badge/OpenCV-4.x-green?logo=opencv)](https://opencv.org/)
 [![MediaPipe](https://img.shields.io/badge/MediaPipe-0.10-orange)](https://mediapipe.dev/)
+[![Release](https://img.shields.io/github/v/release/Anandraj239/CyberAirKeyboard?color=brightgreen&label=Download)](https://github.com/Anandraj239/CyberAirKeyboard/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **Type in mid-air — no physical keyboard required.**
@@ -10,6 +11,16 @@
 Cyber Air Keyboard is a next-generation, computer-vision-based virtual keyboard that lets you type effortlessly using only your webcam and hand gestures. Built with Google MediaPipe hand tracking, it runs entirely offline with zero cloud dependency.
 
 Developed by [Anandraj239](https://github.com/Anandraj239).
+
+---
+
+## ⬇️ Download & Run
+
+> **[📦 Download Latest Release (v1.0)](https://github.com/Anandraj239/CyberAirKeyboard/releases/latest)**
+
+1. Download the ZIP from the link above
+2. Extract it anywhere on your PC
+3. Double-click **`Run Air Keyboard.bat`** — it sets up the environment and launches automatically
 
 ---
 
@@ -39,7 +50,7 @@ Webcam → MediaPipe Hands → Index Tip Position → Hover Detection
 
 ---
 
-## ⚙️ Installation & Setup
+## ⚙️ Manual Installation (VS Code / Terminal)
 
 > Recommended: **Python 3.11** or **3.12** (required for `mediapipe` on Windows)
 
@@ -52,10 +63,7 @@ cd CyberAirKeyboard
 ### 2. Create a virtual environment
 ```bash
 python -m venv venv
-# Windows:
 .\venv\Scripts\activate
-# macOS / Linux:
-source venv/bin/activate
 ```
 
 ### 3. Install dependencies
