@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cyber Air Keyboard — Type in Mid-Air</title>
+  <meta name="description" content="A next-generation computer-vision virtual keyboard. Type in mid-air using only your webcam and hand gestures. Built with MediaPipe & OpenCV." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --neon-pink: #ff64c8;
+      --neon-green: #32ff64;
+      --neon-cyan: #00e5ff;
+      --bg: #07030f;
+      --surface: rgba(255,100,200,0.07);
+      --border: rgba(255,100,200,0.25);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: #e0d0ff;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated grid background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,100,200,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,100,200,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Radial glow top-center */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 600px;
+      background: radial-gradient(ellipse, rgba(255,100,200,0.18) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    section, header, footer { position: relative; z-index: 1; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 40px;
+      background: rgba(7,3,15,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: 'Orbitron', monospace;
+      font-weight: 900;
+      font-size: 1rem;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-links { display: flex; gap: 28px; list-style: none; }
+    .nav-links a {
+      color: rgba(224,208,255,0.7);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 1px;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--neon-pink); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 100px 20px 60px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 18px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--neon-pink);
+      margin-bottom: 28px;
+      background: rgba(255,100,200,0.07);
+      animation: fadeInDown 0.8s ease both;
+    }
+
+    .hero-badge::before {
+      content: '';
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--neon-green);
+      box-shadow: 0 0 8px var(--neon-green);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(2.8rem, 8vw, 6rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -1px;
+      animation: fadeInDown 0.9s 0.1s ease both;
+    }
+
+    h1 .line1 {
+      display: block;
+      background: linear-gradient(135deg, #fff 30%, var(--neon-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    h1 .line2 {
+      display: block;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-sub {
+      margin-top: 24px;
+      font-size: 1.15rem;
+      color: rgba(224,208,255,0.65);
+      max-width: 520px;
+      line-height: 1.7;
+      animation: fadeInDown 1s 0.2s ease both;
+    }
+
+    .hero-actions {
+      margin-top: 44px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeInDown 1s 0.35s ease both;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 32px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--neon-pink), #c832ff);
+      color: #fff;
+      border: none;
+      box-shadow: 0 0 24px rgba(255,100,200,0.4);
+    }
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 40px rgba(255,100,200,0.6);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--neon-cyan);
+      border: 1px solid var(--neon-cyan);
+    }
+    .btn-outline:hover {
+      background: rgba(0,229,255,0.08);
+      transform: translateY(-3px);
+      box-shadow: 0 0 20px rgba(0,229,255,0.2);
+    }
+
+    /* ── KEYBOARD DEMO VISUAL ── */
+    .keyboard-demo {
+      margin-top: 70px;
+      width: 100%;
+      max-width: 860px;
+      background: rgba(10,5,25,0.8);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 24px 28px;
+      animation: fadeInUp 1s 0.5s ease both;
+      box-shadow: 0 0 60px rgba(255,100,200,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .kb-text-bar {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(100,255,200,0.4);
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.9rem;
+      color: #fff;
+      margin-bottom: 18px;
+      min-height: 44px;
+    }
+
+    .kb-rows { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+
+    .kb-row { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
+
+    .key {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      background: rgba(50,30,80,0.8);
+      border: 1px solid rgba(255,100,200,0.2);
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: rgba(200,200,255,0.85);
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .key:hover, .key.hovered {
+      background: rgba(255,100,200,0.25);
+      border-color: var(--neon-pink);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(255,100,200,0.4);
+      transform: translateY(-2px);
+    }
+
+    .key.space-key { width: 280px; }
+    .key.wide-key { width: 64px; font-size: 0.6rem; }
+
+    /* ── FEATURES ── */
+    .features {
+      padding: 100px 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      text-align: center;
+      font-size: 0.75rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--neon-pink);
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      text-align: center;
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 60px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+    }
+    .feature-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(255,100,200,0.12);
+      border-color: rgba(255,100,200,0.5);
+    }
+
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 14px;
+    }
+
+    .feature-card h3 {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--neon-pink);
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    .feature-card p {
+      font-size: 0.9rem;
+      color: rgba(224,208,255,0.65);
+      line-height: 1.7;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how-it-works {
+      padding: 80px 20px;
+      background: linear-gradient(180deg, transparent, rgba(255,100,200,0.04), transparent);
+    }
+
+    .steps {
+      display: flex;
+      gap: 0;
+      justify-content: center;
+      flex-wrap: wrap;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .step {
+      flex: 1;
+      min-width: 200px;
+      text-align: center;
+      padding: 30px 20px;
+      position: relative;
+    }
+
+    .step:not(:last-child)::after {
+      content: '→';
+      position: absolute;
+      right: -10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--neon-pink);
+      font-size: 1.4rem;
+    }
+
+    .step-num {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 2px solid var(--neon-pink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 14px;
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--neon-pink);
+      box-shadow: 0 0 16px rgba(255,100,200,0.3);
+    }
+
+    .step h4 {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.75rem;
+      color: #fff;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    .step p { font-size: 0.82rem; color: rgba(224,208,255,0.55); line-height: 1.6; }
+
+    /* ── DOWNLOAD ── */
+    .download-section {
+      padding: 100px 20px;
+      text-align: center;
+    }
+
+    .download-card {
+      display: inline-block;
+      background: rgba(10,5,25,0.9);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 56px 60px;
+      max-width: 600px;
+      box-shadow: 0 0 80px rgba(255,100,200,0.1);
+    }
+
+    .download-card h2 {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.5rem;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .download-card p {
+      color: rgba(224,208,255,0.6);
+      font-size: 0.92rem;
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+
+    .version-badge {
+      display: inline-block;
+      background: rgba(50,255,100,0.12);
+      border: 1px solid rgba(50,255,100,0.3);
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      color: var(--neon-green);
+      letter-spacing: 1px;
+      margin-bottom: 28px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 36px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    footer .logo {
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: 0.85rem;
+      background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    footer p { font-size: 0.8rem; color: rgba(224,208,255,0.4); }
+
+    footer a { color: var(--neon-pink); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      nav { padding: 14px 20px; }
+      .nav-links { display: none; }
+      .download-card { padding: 36px 24px; }
+      .step:not(:last-child)::after { display: none; }
+      footer { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">CYBER AIR KEYBOARD</div>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#download">Download</a></li>
+    <li><a href="https://github.com/Anandraj239/CyberAirKeyboard" target="_blank">GitHub</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-badge">Open Source · v1.0 · Windows</div>
+
+  <h1>
+    <span class="line1">TYPE IN</span>
+    <span class="line2">MID-AIR ⌨️</span>
+  </h1>
+
+  <p class="hero-sub">
+    A computer-vision virtual keyboard — no hardware needed. Point your index finger, pinch to type. Powered by <strong>Google MediaPipe</strong> &amp; <strong>OpenCV</strong>.
+  </p>
+
+  <div class="hero-actions">
+    <a id="btn-download" href="https://github.com/Anandraj239/CyberAirKeyboard/releases/latest" class="btn btn-primary" target="_blank">
+      ⬇️ Download v1.0
+    </a>
+    <a id="btn-github" href="https://github.com/Anandraj239/CyberAirKeyboard" class="btn btn-outline" target="_blank">
+      ⭐ View on GitHub
+    </a>
+  </div>
+
+  <!-- Animated keyboard preview -->
+  <div class="keyboard-demo" id="keyboard-demo">
+    <div class="kb-text-bar" id="kb-text">_ hover a key below to type...</div>
+    <div class="kb-rows">
+      <div class="kb-row" id="row0"></div>
+      <div class="kb-row" id="row1"></div>
+      <div class="kb-row" id="row2"></div>
+      <div class="kb-row" id="row3"></div>
+      <div class="kb-row" id="row4"></div>
+    </div>
+  </div>
+</header>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <p class="section-label">What makes it special</p>
+  <h2 class="section-title">CORE FEATURES</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🤲</div>
+      <h3>Dual-Hand Tracking</h3>
+      <p>Tracks both hands simultaneously via MediaPipe Hands for faster, more natural typing across the full keyboard.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <h3>Precision Pinch-to-Click</h3>
+      <p>Dynamic threshold adapts to hand distance from camera — reduces misclicks whether your hand is near or far.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>Debounce Cooldown</h3>
+      <p>350ms per-hand cooldown with hysteresis release thresholds prevents accidental double-fires reliably.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💜</div>
+      <h3>Cyber Neon UI</h3>
+      <p>Semi-transparent neon aesthetic rendered natively in OpenCV — no browser, no web, fully offline and local.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📡</div>
+      <h3>100% Offline</h3>
+      <p>No internet required. No cloud API. Runs entirely on your local machine at real-time webcam framerate.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🚀</div>
+      <h3>One-Click Launch</h3>
+      <p>Double-click <code>Run Air Keyboard.bat</code> — it auto-creates the virtualenv, installs dependencies, and launches.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-it-works" id="how">
+  <p class="section-label">Under the hood</p>
+  <h2 class="section-title">HOW IT WORKS</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <h4>Webcam Capture</h4>
+      <p>OpenCV reads frames from your webcam at real-time speed.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <h4>Hand Detection</h4>
+      <p>MediaPipe Hands locates 21 landmarks on each hand per frame.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <h4>Hover Detection</h4>
+      <p>Index fingertip (landmark 8) is matched against keyboard key rects.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <h4>Pinch → Keystroke</h4>
+      <p>Thumb–index distance triggers <code>pyautogui.press()</code> system-wide.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DOWNLOAD -->
+<section class="download-section" id="download">
+  <div class="download-card">
+    <div class="version-badge">✦ LATEST RELEASE — v1.0.0</div>
+    <h2>Ready to Try?</h2>
+    <p>Download the ZIP, extract anywhere, and double-click the launcher. Python &amp; all dependencies are set up automatically. Requires a webcam and Windows.</p>
+    <a id="btn-download-main" href="https://github.com/Anandraj239/CyberAirKeyboard/releases/latest" class="btn btn-primary" target="_blank" style="display:inline-flex; margin-bottom:16px;">
+      📦 Download Latest Release
+    </a>
+    <br/>
+    <a id="btn-source" href="https://github.com/Anandraj239/CyberAirKeyboard" class="btn btn-outline" target="_blank" style="display:inline-flex;">
+      🔗 View Source on GitHub
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="logo">CYBER AIR KEYBOARD</div>
+  <p>Built by <a href="https://github.com/Anandraj239" target="_blank">Anandraj239</a> · MIT License · 2024</p>
+  <p>Python · OpenCV · MediaPipe · pyautogui</p>
+</footer>
+
+<script>
+  // ── Interactive Keyboard Demo ──
+  const rows = [
+    ['`','1','2','3','4','5','6','7','8','9','0','-','=','⌫','DEL'],
+    ['Q','W','E','R','T','Y','U','I','O','P','[',']','\\','CLR'],
+    ['A','S','D','F','G','H','J','K','L',';',"'",'↵'],
+    ['Z','X','C','V','B','N','M',',','.','/','⇧'],
+    ['SPACE'],
+  ];
+
+  const textBar = document.getElementById('kb-text');
+  let typed = '';
+
+  rows.forEach((row, ri) => {
+    const rowEl = document.getElementById('row' + ri);
+    row.forEach(label => {
+      const key = document.createElement('div');
+      key.className = 'key' + (label === 'SPACE' ? ' space-key' : ['⌫','DEL','CLR','↵','⇧'].includes(label) ? ' wide-key' : '');
+      key.textContent = label;
+      key.addEventListener('mouseenter', () => key.classList.add('hovered'));
+      key.addEventListener('mouseleave', () => key.classList.remove('hovered'));
+      key.addEventListener('click', () => {
+        if (label === 'CLR') { typed = ''; }
+        else if (label === '⌫') { typed = typed.slice(0,-1); }
+        else if (label === '↵') { typed += ' '; }
+        else if (label === 'SPACE') { typed += ' '; }
+        else if (!['DEL','⇧'].includes(label)) { typed += label; }
+        textBar.textContent = (typed || '') + '|';
+      });
+      rowEl.appendChild(key);
+    });
+  });
+
+  // Auto-type demo on load
+  const demo = 'CYBER AIR KEYBOARD';
+  let di = 0;
+  textBar.textContent = '|';
+  const typeDemo = setInterval(() => {
+    if (di < demo.length) {
+      typed += demo[di++];
+      textBar.textContent = typed + '|';
+    } else {
+      clearInterval(typeDemo);
+    }
+  }, 90);
+
+  // ── Scroll reveal ──
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.feature-card, .step').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(30px)';
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    observer.observe(el);
+  });
+</script>
+</body>
+</html>
